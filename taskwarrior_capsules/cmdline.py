@@ -5,7 +5,8 @@ import sys
 from blessings import Terminal
 
 from .exceptions import CapsuleError
-from .plugin import CommandCapsule
+from .capsule import CommandCapsule
+from .capsule_meta import CapsuleMeta
 
 
 def get_installed_capsules(variant='command'):
@@ -38,35 +39,36 @@ def main(args=None):
     commands = get_installed_capsules('command')
     preprocessors = get_installed_capsules('preprocessor')
     postprocessors = get_installed_capsules('postprocessor')
+    meta = CapsuleMeta()
 
     command = None
     filter_args = None
     extra_args = None
     for idx, arg in enumerate(args):
         if arg in commands:
+            command_name = arg
             command = commands[arg]
             filter_args = args[0:idx]
             extra_args = args[idx+1:]
 
     for processor in preprocessors:
         filter_args, extra_args, command = processor.execute(
-            'preprocessor', filter_args, extra_args, command,
+            'preprocessor', meta, command_name, filter_args, extra_args,
+            terminal=term,
         )
 
     if command:
-        command_name = args.command[0]
-        cmd_class = commands[command_name]
-
         try:
-            result = cmd_class.execute(
-                'command', filter_args, extra_args, command_name
+            result = command.execute(
+                'command', meta, command_name, filter_args, extra_args,
+                terminal=term,
             )
         except CapsuleError as e:
             print(
                 "{t.red}The {capsule_name} taskwarrior capsule "
                 "encountered an error processing your request: "
                 "{t.normal}{t.red}{t.bold}{error}{t.normal}".format(
-                    capsule_name=command_name,
+                    capsule_name=command,
                     t=term,
                     error=str(e)
                 )
@@ -79,7 +81,8 @@ def main(args=None):
 
     for processor in postprocessors:
         filter_args, extra_args, command = processor.execute(
-            'postprocessor', filter_args, extra_args, command,
+            'postprocessor', meta, command_name, filter_args, extra_args,
+            terminal=term,
             result=result
         )
 

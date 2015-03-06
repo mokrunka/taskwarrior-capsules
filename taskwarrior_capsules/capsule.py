@@ -1,4 +1,5 @@
 import json
+import subprocess
 
 from verlib import NormalizedVersion
 
@@ -19,11 +20,35 @@ class PluginOperationError(PluginError):
 
 
 class TaskwarriorCapsuleBase(object):
+    def get_taskwarrior_version(self):
+        taskwarrior_version = subprocess.Popen(
+            ['task', '--version'],
+            stdout=subprocess.PIPE
+        ).communicate()[0]
+        return NormalizedVersion(taskwarrior_version)
+
     def validate(self, **kwargs):
         if not self.MIN_VERSION or not self.MAX_VERSION:
             raise PluginValidationError(
                 "Minimum and maximum version numbers not specified."
             )
+
+        if hasattr(self, 'MIN_TASKWARRIOR_VERSION'):
+            tw_version = self.get_taskwarrior_version()
+            if NormalizedVersion(self.MIN_TASKWARRIOR_VERSION) > tw_version:
+                raise PluginValidationError(
+                    "Requires Taskwarrior version %s or above." % (
+                        self.MIN_TASKWARRIOR_VERSION
+                    )
+                )
+        if hasattr(self, 'MAX_TASKWARRIOR_VERSION'):
+            tw_version = self.get_taskwarrior_version()
+            if NormalizedVersion(self.MAX_TASKWARRIOR_VERSION) < tw_version:
+                raise PluginValidationError(
+                    "Requires Taskwarrior version %s or below." % (
+                        self.MAX_TASKWARRIOR_VERSION
+                    )
+                )
 
         min_version = NormalizedVersion(self.MIN_VERSION)
         max_version = NormalizedVersion(self.MAX_VERSION)
@@ -33,8 +58,7 @@ class TaskwarriorCapsuleBase(object):
                 "Plugin '%s' is not compatible with version %s of "
                 "taskwarrior-capsules; "
                 "minimum version: %s; "
-                "maximum version %s.",
-                (
+                "maximum version %s." % (
                     self.plugin_name,
                     __version__,
                     self.MIN_VERSION,
@@ -82,9 +106,10 @@ class Capsule(TaskwarriorCapsuleBase):
 
 
 class CommandCapsule(Capsule):
-    def __init__(self, **kwargs):
+    def __init__(self, meta, plugin_name, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
+        super(CommandCapsule, self).__init__(meta, plugin_name, **kwargs)
 
     def get_description(self):
         try:
@@ -100,9 +125,12 @@ class CommandCapsule(Capsule):
 
     @classmethod
     def execute(
-        cls, variant, filter_args, extra_args, command_name, **kwargs
+        cls, variant, meta, command_name, filter_args, extra_args, **kwargs
     ):
-        cmd = cls(plugin_name=command_name)
+        cmd = cls(
+            meta=meta,
+            plugin_name=command_name
+        )
         cmd.validate(**kwargs)
 
         command_name_map = {
@@ -113,12 +141,11 @@ class CommandCapsule(Capsule):
 
         if hasattr(cls, command_name_map.get(variant)):
             return getattr(
-                cls,
+                cmd,
                 command_name_map[variant]
             )(
                 filter_args,
                 extra_args,
-                command_name,
                 **kwargs
             )
 
@@ -130,5 +157,5 @@ class CommandCapsule(Capsule):
             )
         )
 
-    def handle(self, folder, args, **kwargs):
+    def handle(self, filter_args, extra_args, **kwargs):
         raise NotImplementedError()
