@@ -4,6 +4,9 @@ Taskwarrior Capsules -- The easy plugin framework for Taskwarrior
 Taskwarrior Capsules allows you to easily extend Taskwarrior functionality
 to add new commands and other things.
 
+**WARNING**: It is strongly recommended that you not use this quite yet;
+there will be substantial changes in the coming days.
+
 
 Installation
 ------------
