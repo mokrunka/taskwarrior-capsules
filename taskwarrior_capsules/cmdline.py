@@ -5,7 +5,7 @@ import sys
 from blessings import Terminal
 
 from .exceptions import CapsuleError
-from .plugin import CommandPlugin
+from .plugin import CommandCapsule
 
 
 def get_installed_capsules(variant='command'):
@@ -23,7 +23,7 @@ def get_installed_capsules(variant='command'):
             loaded_class = entry_point.load()
         except ImportError:
             continue
-        if not issubclass(loaded_class, CommandPlugin):
+        if not issubclass(loaded_class, CommandCapsule):
             continue
         possible_commands[entry_point.name] = loaded_class
 

@@ -45,7 +45,7 @@ class TaskwarriorCapsuleBase(object):
         return True
 
 
-class Plugin(TaskwarriorCapsuleBase):
+class Capsule(TaskwarriorCapsuleBase):
     MIN_VERSION = None
     MAX_VERSION = None
 
@@ -81,7 +81,7 @@ class Plugin(TaskwarriorCapsuleBase):
             )
 
 
-class CommandPlugin(TaskwarriorCapsuleBase):
+class CommandCapsule(Capsule):
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
