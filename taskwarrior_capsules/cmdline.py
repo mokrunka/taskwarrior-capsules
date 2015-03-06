@@ -68,7 +68,7 @@ def main(args=None):
                 "{t.red}The {capsule_name} taskwarrior capsule "
                 "encountered an error processing your request: "
                 "{t.normal}{t.red}{t.bold}{error}{t.normal}".format(
-                    capsule_name=command,
+                    capsule_name=command_name,
                     t=term,
                     error=str(e)
                 )
