@@ -53,7 +53,7 @@ def main(args=None):
             filter_args = args[0:idx]
             extra_args = args[idx+1:]
 
-    for processor in preprocessors:
+    for processor_name, processor in preprocessors.items():
         filter_args, extra_args, command = processor.execute(
             'preprocessor', meta, command_name, filter_args, extra_args,
             terminal=term,
@@ -81,7 +81,7 @@ def main(args=None):
         task_args = ['task'] + args
         result = subprocess.call(task_args)
 
-    for processor in postprocessors:
+    for processor_name, processor in postprocessors.items():
         filter_args, extra_args, command = processor.execute(
             'postprocessor', meta, command_name, filter_args, extra_args,
             terminal=term,
