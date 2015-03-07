@@ -1,3 +1,4 @@
 configobj>=5.0.6,<5.1
 blessings>=1.5.1,<1.6.0
 verlib>=0.1,<1.0
+taskw>=1.0.3,<2.0

@@ -1,6 +1,8 @@
-import json
 import subprocess
+import warnings
 
+from configobj import ConfigObj
+from taskw.warrior import TaskWarriorShellout
 from verlib import NormalizedVersion
 
 from . import __version__
@@ -28,88 +30,90 @@ class TaskwarriorCapsuleBase(object):
         return NormalizedVersion(taskwarrior_version)
 
     def validate(self, **kwargs):
-        if not self.MIN_VERSION or not self.MAX_VERSION:
-            raise PluginValidationError(
-                "Minimum and maximum version numbers not specified."
-            )
-
-        if hasattr(self, 'MIN_TASKWARRIOR_VERSION'):
-            tw_version = self.get_taskwarrior_version()
-            if NormalizedVersion(self.MIN_TASKWARRIOR_VERSION) > tw_version:
-                raise PluginValidationError(
-                    "Requires Taskwarrior version %s or above." % (
-                        self.MIN_TASKWARRIOR_VERSION
-                    )
+        if not (self.MIN_VERSION and self.MAX_VERSION):
+            warnings.warn(
+                "%s does not specify compatible which taskwarrior-capsule "
+                "versions it is compatible with; you may encounter "
+                "compatibility problems. " % (
+                    self.plugin_name
                 )
-        if hasattr(self, 'MAX_TASKWARRIOR_VERSION'):
-            tw_version = self.get_taskwarrior_version()
-            if NormalizedVersion(self.MAX_TASKWARRIOR_VERSION) < tw_version:
-                raise PluginValidationError(
-                    "Requires Taskwarrior version %s or below." % (
-                        self.MAX_TASKWARRIOR_VERSION
-                    )
+            )
+        else:
+            curr_version = NormalizedVersion(__version__)
+            min_version = NormalizedVersion(self.MIN_VERSION)
+            max_version = NormalizedVersion(self.MAX_VERSION)
+
+            if not min_version <= curr_version <= max_version:
+                warnings.warn(
+                    "Plugin '%s' is not compatible with version %s of "
+                    "taskwarrior-capsules; "
+                    "minimum version: %s; "
+                    "maximum version %s." % (
+                        self.plugin_name,
+                        __version__,
+                        min_version,
+                        max_version,
+                    ),
                 )
 
-        min_version = NormalizedVersion(self.MIN_VERSION)
-        max_version = NormalizedVersion(self.MAX_VERSION)
-        curr_version = NormalizedVersion(__version__)
-        if not min_version <= curr_version <= max_version:
-            raise PluginValidationError(
-                "Plugin '%s' is not compatible with version %s of "
-                "taskwarrior-capsules; "
-                "minimum version: %s; "
-                "maximum version %s." % (
-                    self.plugin_name,
-                    __version__,
-                    self.MIN_VERSION,
-                    self.MAX_VERSION,
-                ),
+        if not (self.MAX_TASKWARRIOR_VERSION and self.MIN_TASKWARRIOR_VERSION):
+            warnings.warn(
+                "%s does not specify which taskwarrior versions it is "
+                "compatible with; you may encounter compatibility "
+                "problems. " % (
+                    self.plugin_name
+                )
             )
+        else:
+            tw_version = self.get_taskwarrior_version()
+            min_tw_version = NormalizedVersion(self.MIN_TASKWARRIOR_VERSION)
+            max_tw_version = NormalizedVersion(self.MAX_TASKWARRIOR_VERSION)
+
+            if not min_tw_version <= tw_version <= max_tw_version:
+                warnings.warn(
+                    "Plugin '%s' is not compatible with version %s of "
+                    "taskwarrior; "
+                    "minimum version: %s; "
+                    "maximum version %s." % (
+                        self.plugin_name,
+                        tw_version,
+                        min_tw_version,
+                        max_tw_version,
+                    ),
+                )
 
         return True
 
 
-class Capsule(TaskwarriorCapsuleBase):
+class CommandCapsule(TaskwarriorCapsuleBase):
     MIN_VERSION = None
     MAX_VERSION = None
+    MIN_TASKWARRIOR_VERSION = None
+    MAX_TASKWARRIOR_VERSION = None
 
     def __init__(self, meta, plugin_name, **kwargs):
         self.meta = meta
         self.plugin_name = plugin_name
+        self.client = TaskWarriorShellout(marshal=True)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        super(CommandCapsule, self).__init__()
 
     @property
-    def metadata_filename(self):
+    def configuration_filename(self):
         return self.meta.get_metadata_path(
-            'plugin_meta',
             '%s.json' % self.plugin_name,
         )
 
-    def get_configuration(self):
-        return self.meta.configuration[self.plugin_name]
+    @property
+    def global_configuration(self):
+        return self.meta.configuration
 
-    def get_metadata(self):
-        try:
-            with open(self.metadata_filename, 'r') as _in:
-                return json.loads(_in.read())
-        except (IOError, OSError):
-            return {}
-
-    def set_metadata(self, data):
-        with open(self.metadata_filename, 'w') as out:
-            out.write(
-                json.dumps(
-                    data,
-                    indent=4,
-                    sort_keys=True,
-                )
-            )
-
-
-class CommandCapsule(Capsule):
-    def __init__(self, meta, plugin_name, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-        super(CommandCapsule, self).__init__(meta, plugin_name, **kwargs)
+    @property
+    def configuration(self):
+        if not hasattr(self, '_config'):
+            self._config = ConfigObj(self.configuration_filename)
+        return self._config
 
     def get_description(self):
         try:
@@ -117,11 +121,18 @@ class CommandCapsule(Capsule):
         except AttributeError:
             raise None
 
-    def add_arguments(self, parser):
-        pass
+    def get_matching_tasks(self, filter_args):
+        filter_command = filter_args + ['status:pending', 'export']
+        results = self.client._get_json(*filter_command)
 
-    def parse_arguments(self, parser, extra_args):
-        return parser.parse_args(extra_args)
+        tasks = []
+        for result in results:
+            _, task = self.client.get_task(
+                uuid=result['uuid']
+            )
+            tasks.append(task)
+
+        return tasks
 
     @classmethod
     def execute(
