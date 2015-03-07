@@ -7,6 +7,7 @@ from blessings import Terminal
 from .exceptions import CapsuleError
 from .capsule import CommandCapsule
 from .capsule_meta import CapsuleMeta
+from .data import BUILT_IN_COMMANDS
 
 
 def get_installed_capsules(variant='command'):
@@ -45,9 +46,10 @@ def main(args=None):
     filter_args = None
     extra_args = None
     for idx, arg in enumerate(args):
-        if arg in commands:
+        if arg in commands or arg in BUILT_IN_COMMANDS:
             command_name = arg
-            command = commands[arg]
+            if arg in commands:
+                command = commands[arg]
             filter_args = args[0:idx]
             extra_args = args[idx+1:]
 
