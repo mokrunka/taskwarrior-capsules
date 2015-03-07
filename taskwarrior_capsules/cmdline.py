@@ -43,8 +43,9 @@ def main(args=None):
     meta = CapsuleMeta()
 
     command = None
-    filter_args = None
-    extra_args = None
+    command_name = ''
+    filter_args = []
+    extra_args = []
     for idx, arg in enumerate(args):
         if arg in commands or arg in BUILT_IN_COMMANDS:
             command_name = arg
@@ -52,6 +53,8 @@ def main(args=None):
                 command = commands[arg]
             filter_args = args[0:idx]
             extra_args = args[idx+1:]
+    if not command_name:
+        extra_args = args[0:]
 
     for processor_name, processor in preprocessors.items():
         filter_args, extra_args, command_name = processor.execute(
@@ -78,7 +81,10 @@ def main(args=None):
             sys.exit(90)
     else:
         # Run this as a normal command
-        task_args = ['task'] + args
+        task_args = ['task'] + filter_args
+        if command_name:
+            task_args.append(command_name)
+        task_args = task_args + extra_args
         result = subprocess.call(task_args)
 
     for processor_name, processor in postprocessors.items():

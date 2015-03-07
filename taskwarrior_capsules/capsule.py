@@ -1,3 +1,4 @@
+import re
 import subprocess
 import warnings
 
@@ -7,18 +8,6 @@ from verlib import NormalizedVersion
 
 from . import __version__
 from .exceptions import CapsuleProgrammingError
-
-
-class PluginError(Exception):
-    pass
-
-
-class PluginValidationError(PluginError):
-    pass
-
-
-class PluginOperationError(PluginError):
-    pass
 
 
 class TaskwarriorCapsuleBase(object):
@@ -32,10 +21,10 @@ class TaskwarriorCapsuleBase(object):
     def validate(self, **kwargs):
         if not (self.MIN_VERSION and self.MAX_VERSION):
             warnings.warn(
-                "%s does not specify compatible which taskwarrior-capsule "
-                "versions it is compatible with; you may encounter "
-                "compatibility problems. " % (
-                    self.plugin_name
+                "Capsule '%s' does not specify compatible which "
+                "taskwarrior-capsule versions it is compatible with; you may "
+                "encounter compatibility problems. " % (
+                    self.command_name
                 )
             )
         else:
@@ -45,11 +34,11 @@ class TaskwarriorCapsuleBase(object):
 
             if not min_version <= curr_version <= max_version:
                 warnings.warn(
-                    "Plugin '%s' is not compatible with version %s of "
+                    "Capsule '%s' is not compatible with version %s of "
                     "taskwarrior-capsules; "
                     "minimum version: %s; "
                     "maximum version %s." % (
-                        self.plugin_name,
+                        self.command_name,
                         __version__,
                         min_version,
                         max_version,
@@ -58,10 +47,10 @@ class TaskwarriorCapsuleBase(object):
 
         if not (self.MAX_TASKWARRIOR_VERSION and self.MIN_TASKWARRIOR_VERSION):
             warnings.warn(
-                "%s does not specify which taskwarrior versions it is "
-                "compatible with; you may encounter compatibility "
+                "Capsule '%s' does not specify which taskwarrior versions it "
+                "is compatible with; you may encounter compatibility "
                 "problems. " % (
-                    self.plugin_name
+                    self.command_name
                 )
             )
         else:
@@ -71,11 +60,11 @@ class TaskwarriorCapsuleBase(object):
 
             if not min_tw_version <= tw_version <= max_tw_version:
                 warnings.warn(
-                    "Plugin '%s' is not compatible with version %s of "
+                    "Capsule '%s' is not compatible with version %s of "
                     "taskwarrior; "
                     "minimum version: %s; "
                     "maximum version %s." % (
-                        self.plugin_name,
+                        self.command_name,
                         tw_version,
                         min_tw_version,
                         max_tw_version,
@@ -91,18 +80,23 @@ class CommandCapsule(TaskwarriorCapsuleBase):
     MIN_TASKWARRIOR_VERSION = None
     MAX_TASKWARRIOR_VERSION = None
 
-    def __init__(self, meta, plugin_name, **kwargs):
+    def __init__(self, meta, command_name, **kwargs):
         self.meta = meta
-        self.plugin_name = plugin_name
+        self.command_name = command_name
         self.client = TaskWarriorShellout(marshal=True)
         for k, v in kwargs.items():
             setattr(self, k, v)
         super(CommandCapsule, self).__init__()
 
     @property
+    def capsule_name(self):
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', self.__class__.__name__)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+    @property
     def configuration_filename(self):
         return self.meta.get_metadata_path(
-            '%s.json' % self.plugin_name,
+            '%s.ini' % self.capsule_name,
         )
 
     @property
@@ -140,7 +134,7 @@ class CommandCapsule(TaskwarriorCapsuleBase):
     ):
         cmd = cls(
             meta=meta,
-            plugin_name=command_name
+            command_name=command_name
         )
         cmd.validate(**kwargs)
 
