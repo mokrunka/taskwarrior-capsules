@@ -11,3 +11,4 @@ include/*
 share/*
 .tox/*
 pip-selfcheck.json
+docs/build

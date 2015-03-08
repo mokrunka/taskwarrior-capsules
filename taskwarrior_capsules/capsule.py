@@ -18,6 +18,9 @@ class TaskwarriorCapsuleBase(object):
         ).communicate()[0]
         return NormalizedVersion(taskwarrior_version)
 
+    def get_taskwarrior_capsules_version(self):
+        return NormalizedVersion(__version__)
+
     def validate(self, **kwargs):
         if not (self.MIN_VERSION and self.MAX_VERSION):
             warnings.warn(
@@ -28,7 +31,7 @@ class TaskwarriorCapsuleBase(object):
                 )
             )
         else:
-            curr_version = NormalizedVersion(__version__)
+            curr_version = self.get_taskwarrior_capsules_version()
             min_version = NormalizedVersion(self.MIN_VERSION)
             max_version = NormalizedVersion(self.MAX_VERSION)
 
