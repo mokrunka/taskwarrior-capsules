@@ -150,6 +150,8 @@ All Capsules inherit the following methods:
   you can pass your ``filter_args`` directly to this method to return
   dictionary-like objects representing matching tasks.  Each task is an instance
   of `taskw.task.Task <https://github.com/ralphbean/taskw/blob/03b908bcedb0bc36d4c8f5f9b1fc62271296417b/taskw/task.py#L26>`_.
+* ``get_tasks_changed_since(datetime)``: Returns tasks that have been changed
+  since the time specified by the ``datetime.datetime`` object passed-in.
 
 And the following properties:
 

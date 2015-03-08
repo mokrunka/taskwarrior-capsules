@@ -1,8 +1,9 @@
-import re
+import datetime
 import subprocess
 import warnings
 
 from configobj import ConfigObj
+import pytz
 from taskw.warrior import TaskWarriorShellout
 from verlib import NormalizedVersion
 
@@ -91,7 +92,6 @@ class CommandCapsule(TaskwarriorCapsuleBase):
     MIN_TASKWARRIOR_VERSION = None
     MAX_TASKWARRIOR_VERSION = None
 
-
     def __init__(self, meta, capsule_name, **kwargs):
         self.meta = meta
         self.capsule_name = capsule_name
@@ -139,6 +139,22 @@ class CommandCapsule(TaskwarriorCapsuleBase):
             tasks.append(task)
 
         return tasks
+
+    def get_tasks_changed_since(self, since):
+        """ Returns a list of tasks that were changed recently."""
+        changed_tasks = []
+
+        for task in self.client.filter_tasks({'status': 'pending'}):
+            if task.get(
+                'modified',
+                task.get(
+                    'entry',
+                    datetime.datetime(2000, 1, 1).replace(tzinfo=pytz.utc)
+                )
+            ) >= since:
+                changed_tasks.append(task)
+
+        return changed_tasks
 
     @classmethod
     def execute(
