@@ -136,6 +136,42 @@ Your Capsule
      of ``taskwarrior_capsules.exceptions.CapsuleError`` with a helpful
      error message explaining the incompatibility.
 
+Available Methods
+~~~~~~~~~~~~~~~~~
+
+All Capsules inherit the following methods:
+
+* ``get_taskwarrior_version()``: Returns an instance of ``verlib.NormalizedVersion``
+  corresponding with the version of Taskwarrior currently in use.
+* ``get_taskwarrior_capsules_version()``: Returns an instance of
+  ``verlib.NormalizedVersion`` corresponding with the version of
+  Taskwarrior Capsules currently in use.
+* ``get_matching_tasks(filters)``: Returns tasks matching the specified filters;
+  you can pass your ``filter_args`` directly to this method to return
+  dictionary-like objects representing matching tasks.  Each task is an instance
+  of `taskw.task.Task <https://github.com/ralphbean/taskw/blob/03b908bcedb0bc36d4c8f5f9b1fc62271296417b/taskw/task.py#L26>`_.
+
+And the following properties:
+
+* ``capsule_name``: The name of the capsule (as specified in the
+  ``setup.py`` file installing it).
+* ``client``: An instance of ``taskw.warrior.TaskWarriorShellout`` allowing
+  one to interact with Taskwarrior via an object-oriented interface.  See
+  `taskw's documentation <https://github.com/ralphbean/taskw>`_ for more
+  information.
+* ``configuration``: An editable dictionary-like object that stores
+  local per-capsule configuration.  If modifications are made to this object,
+  be sure to call ``.write()`` to write the changes to disk.  Note that
+  configuration files are stored in
+  ``~/.taskwarrior-capsules/<capsule_name>.ini``, but that encouraging users
+  to hand-modify the configuration file is discouraged.
+* ``global_configuration``: A dictionary-like object storing Taskwarrior
+  Capsules' configuration.  This file, too, is editable, but editing
+  is discouraged for purposes other than communicating details between
+  capsules.
+* ``meta``: An instance of ``taskwarrior_capsules.capsule_meta.CapsuleMeta``
+  storing metadata about the Taskwarrior Capsules environment.
+
 Your ``setup.py``
 -----------------
 
