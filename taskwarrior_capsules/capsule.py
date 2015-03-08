@@ -45,7 +45,13 @@ class TaskwarriorCapsuleBase(object):
                     ),
                 )
 
-        if not (self.MAX_TASKWARRIOR_VERSION and self.MIN_TASKWARRIOR_VERSION):
+        if not self.TASKWARRIOR_VERSION_CHECK_NECESSARY:
+            # Let's just continue on without checking taskwarrior
+            # version compatibility.
+            pass
+        elif not (
+            self.MAX_TASKWARRIOR_VERSION and self.MIN_TASKWARRIOR_VERSION
+        ):
             warnings.warn(
                 "Capsule '%s' does not specify which taskwarrior versions it "
                 "is compatible with; you may encounter compatibility "
@@ -77,21 +83,24 @@ class TaskwarriorCapsuleBase(object):
 class CommandCapsule(TaskwarriorCapsuleBase):
     MIN_VERSION = None
     MAX_VERSION = None
+
+    TASKWARRIOR_VERSION_CHECK_NECESSARY = True
     MIN_TASKWARRIOR_VERSION = None
     MAX_TASKWARRIOR_VERSION = None
 
-    def __init__(self, meta, command_name, **kwargs):
+
+    def __init__(self, meta, capsule_name, **kwargs):
         self.meta = meta
-        self.command_name = command_name
+        self.capsule_name = capsule_name
         self.client = TaskWarriorShellout(marshal=True)
         for k, v in kwargs.items():
             setattr(self, k, v)
         super(CommandCapsule, self).__init__()
 
-    @property
-    def capsule_name(self):
-        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', self.__class__.__name__)
-        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    @classmethod
+    def get_summary(cls):
+        doc = cls.__doc__ if cls.__doc__ else ''
+        return doc.strip().split('\n')[0].strip()
 
     @property
     def configuration_filename(self):
@@ -130,11 +139,12 @@ class CommandCapsule(TaskwarriorCapsuleBase):
 
     @classmethod
     def execute(
-        cls, variant, meta, command_name, filter_args, extra_args, **kwargs
+        cls, variant, capsule_name, meta, command_name,
+        filter_args, extra_args, **kwargs
     ):
         cmd = cls(
             meta=meta,
-            command_name=command_name
+            capsule_name=capsule_name,
         )
         cmd.validate(**kwargs)
 
@@ -151,6 +161,7 @@ class CommandCapsule(TaskwarriorCapsuleBase):
             )(
                 filter_args,
                 extra_args,
+                command_name=command_name,
                 **kwargs
             )
 

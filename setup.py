@@ -64,5 +64,8 @@ setup(
         'console_scripts': [
             'tw = taskwarrior_capsules.cmdline:main'
         ],
+        'taskwarrior_capsules': [
+            'capsules = taskwarrior_capsules.commands.main:Capsules',
+        ],
     },
 )

@@ -58,14 +58,24 @@ def main(args=None):
 
     for processor_name, processor in preprocessors.items():
         filter_args, extra_args, command_name = processor.execute(
-            'preprocessor', meta, command_name, filter_args, extra_args,
+            variant='preprocessor',
+            capsule_name=processor_name,
+            meta=meta,
+            command_name=command_name,
+            filter_args=filter_args,
+            extra_args=extra_args,
             terminal=term,
         )
 
     if command:
         try:
             result = command.execute(
-                'command', meta, command_name, filter_args, extra_args,
+                variant='command',
+                capsule_name=command_name,
+                meta=meta,
+                command_name=command_name,
+                filter_args=filter_args,
+                extra_args=extra_args,
                 terminal=term,
             )
         except CapsuleError as e:
@@ -89,7 +99,12 @@ def main(args=None):
 
     for processor_name, processor in postprocessors.items():
         processor.execute(
-            'postprocessor', meta, command_name, filter_args, extra_args,
+            variant='postprocessor',
+            capsule_name=processor_name,
+            meta=meta,
+            command_name=command_name,
+            filter_args=filter_args,
+            extra_args=extra_args,
             terminal=term,
             result=result
         )
