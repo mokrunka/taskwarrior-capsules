@@ -169,8 +169,7 @@ And the following properties:
   to hand-modify the configuration file is discouraged.
 * ``global_configuration``: A dictionary-like object storing Taskwarrior
   Capsules' configuration.  This file, too, is editable, but editing
-  is discouraged for purposes other than communicating details between
-  capsules.
+  is discouraged.
 * ``meta``: An instance of ``taskwarrior_capsules.capsule_meta.CapsuleMeta``
   storing metadata about the Taskwarrior Capsules environment.
 

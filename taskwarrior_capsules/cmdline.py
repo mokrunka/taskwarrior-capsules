@@ -3,6 +3,7 @@ import subprocess
 import sys
 
 from blessings import Terminal
+from taskw.warrior import TaskWarriorShellout
 
 from .exceptions import CapsuleError
 from .capsule import CommandCapsule
@@ -32,15 +33,44 @@ def get_installed_capsules(variant='command'):
     return possible_commands
 
 
+def get_initialized_installed_capsules(
+    variant='command',
+    meta=None,
+    client=None,
+):
+    capsules = get_installed_capsules(variant)
+    for name, capsule in capsules.items():
+        capsules[name] = capsule(
+            meta,
+            name,
+            client,
+        )
+    return capsules
+
+
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
 
     term = Terminal()
-    commands = get_installed_capsules('command')
-    preprocessors = get_installed_capsules('preprocessor')
-    postprocessors = get_installed_capsules('postprocessor')
     meta = CapsuleMeta()
+    client = TaskWarriorShellout(marshal=True)
+
+    commands = get_initialized_installed_capsules(
+        'command',
+        meta,
+        client,
+    )
+    preprocessors = get_initialized_installed_capsules(
+        'preprocessor',
+        meta,
+        client,
+    )
+    postprocessors = get_initialized_installed_capsules(
+        'postprocessor',
+        meta,
+        client,
+    )
 
     command = None
     command_name = ''

@@ -4,7 +4,6 @@ import warnings
 
 from configobj import ConfigObj
 import pytz
-from taskw.warrior import TaskWarriorShellout
 from verlib import NormalizedVersion
 
 from . import __version__
@@ -92,12 +91,10 @@ class CommandCapsule(TaskwarriorCapsuleBase):
     MIN_TASKWARRIOR_VERSION = None
     MAX_TASKWARRIOR_VERSION = None
 
-    def __init__(self, meta, capsule_name, **kwargs):
+    def __init__(self, meta, capsule_name, client, **kwargs):
         self.meta = meta
         self.capsule_name = capsule_name
-        self.client = TaskWarriorShellout(marshal=True)
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        self.client = client
         super(CommandCapsule, self).__init__()
 
     @classmethod
@@ -156,16 +153,10 @@ class CommandCapsule(TaskwarriorCapsuleBase):
 
         return changed_tasks
 
-    @classmethod
     def execute(
-        cls, variant, capsule_name, meta, command_name,
-        filter_args, extra_args, **kwargs
+        self, variant, command_name, filter_args, extra_args, **kwargs
     ):
-        cmd = cls(
-            meta=meta,
-            capsule_name=capsule_name,
-        )
-        cmd.validate(**kwargs)
+        self.validate(**kwargs)
 
         command_name_map = {
             'preprocessor': 'preprocess',
@@ -173,9 +164,9 @@ class CommandCapsule(TaskwarriorCapsuleBase):
             'postprocessor': 'postprocess',
         }
 
-        if hasattr(cls, command_name_map.get(variant)):
+        if hasattr(self, command_name_map.get(variant)):
             return getattr(
-                cmd,
+                self,
                 command_name_map[variant]
             )(
                 filter_args,
@@ -186,7 +177,7 @@ class CommandCapsule(TaskwarriorCapsuleBase):
 
         raise CapsuleProgrammingError(
             "%s was called as a %s but the %s method is not implemented!" % (
-                cls.__name__,
+                self.__class__.__name__,
                 variant,
                 command_name_map[variant],
             )
