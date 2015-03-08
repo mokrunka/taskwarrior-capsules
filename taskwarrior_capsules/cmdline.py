@@ -72,15 +72,12 @@ def main(args=None):
         client,
     )
 
-    command = None
     command_name = ''
     filter_args = []
     extra_args = []
     for idx, arg in enumerate(args):
         if arg in commands or arg in BUILT_IN_COMMANDS:
             command_name = arg
-            if arg in commands:
-                command = commands[arg]
             filter_args = args[0:idx]
             extra_args = args[idx+1:]
     if not command_name:
@@ -97,7 +94,8 @@ def main(args=None):
             terminal=term,
         )
 
-    if command:
+    if command_name in commands:
+        command = commands[command_name]
         try:
             result = command.execute(
                 variant='command',
