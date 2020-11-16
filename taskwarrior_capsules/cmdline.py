@@ -107,15 +107,8 @@ def main(args=None):
                 terminal=term,
             )
         except CapsuleError as e:
-            print(
-                "{t.red}The {capsule_name} taskwarrior capsule "
-                "encountered an error processing your request: "
-                "{t.normal}{t.red}{t.bold}{error}{t.normal}".format(
-                    capsule_name=command_name,
-                    t=term,
-                    error=str(e)
-                )
-            )
+            print(f'{term.red}The {command_name} taskwarrior capsule encountered an error processing your request: '
+                  f'{term.normal}{term.red}{term.bold}{str(e)}{term.normal}')
             sys.exit(90)
     else:
         # Run this as a normal command
