@@ -24,17 +24,11 @@ class Capsules(CommandCapsule):
             }
 
             for headline, variant in search_list.items():
-                print "{t.bold}{t.blue}{headline}{t.normal}:".format(
-                    headline=headline,
-                    t=terminal
-                )
+                print(f'{terminal.bold}{terminal.blue}{headline}{terminal.normal}:')
+
                 for name, module in get_installed_capsules(variant).items():
                     summary = module.get_summary()
-                    print "- {t.bold}{name}{t.normal}: {docstring}".format(
-                        name=name,
-                        t=terminal,
-                        docstring=summary if summary else '(No docstring)'
-                    )
-                print ""
+                    print(f'- {terminal.bold}{name}{terminal.normal}: {summary if summary else "(No docstring)"}')
+                print("")
         else:
             raise CapsuleError("Command '%s' is not defined." % first_arg)
